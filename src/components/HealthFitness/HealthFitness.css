@@ -1,0 +1,359 @@
+.health-fitness {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  color: #333;
+  background-color: #f7f7f7;
+}
+
+h1, h2, h3, h4 {
+  color: #2c3e50;
+}
+
+button {
+  background-color: #3498db;
+  border: none;
+  color: white;
+  padding: 10px 20px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 16px;
+  margin: 4px 2px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background-color 0.3s ease;
+}
+
+button:hover {
+  background-color: #2980b9;
+}
+
+input[type="text"], input[type="number"] {
+  width: 100%;
+  padding: 12px 20px;
+  margin: 8px 0;
+  display: inline-block;
+  border: 1px solid #bdc3c7;
+  border-radius: 4px;
+  box-sizing: border-box;
+  font-size: 16px;
+}
+
+.start-workout {
+  text-align: center;
+  margin-top: 20px;
+}
+
+.current-workout {
+  background-color: white;
+  border-radius: 8px;
+  padding: 20px;
+  margin-top: 20px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.workout-name-input {
+  font-size: 24px;
+  font-weight: bold;
+  margin-bottom: 20px;
+}
+
+.exercise {
+  background-color: #f9f9f9;
+  border: 1px solid #ecf0f1;
+  border-radius: 4px;
+  padding: 15px;
+  margin-bottom: 15px;
+}
+
+.exercise-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.set {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 5px 0;
+  padding: 5px;
+  background-color: #ecf0f1;
+  border-radius: 4px;
+}
+
+.add-set {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.add-set input {
+  flex: 1;
+}
+
+.finish-workout {
+  display: block;
+  width: 100%;
+  margin-top: 20px;
+  background-color: #2ecc71;
+}
+
+.finish-workout:hover {
+  background-color: #27ae60;
+}
+
+.workout-history {
+  margin-top: 40px;
+}
+
+.workout-entry {
+  background-color: white;
+  border: 1px solid #ecf0f1;
+  border-radius: 8px;
+  padding: 15px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.workout-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.exercise-entry {
+  margin-left: 20px;
+}
+
+.exercise-entry ul {
+  list-style-type: none;
+  padding-left: 0;
+}
+
+.edit-button {
+  background-color: #f39c12;
+  padding: 5px 10px;
+  font-size: 14px;
+  margin-right: 5px;
+}
+
+.edit-button:hover {
+  background-color: #e67e22;
+}
+
+.delete-button {
+  background-color: #e74c3c;
+  padding: 5px 10px;
+  font-size: 14px;
+}
+
+.delete-button:hover {
+  background-color: #c0392b;
+}
+
+.add-exercise {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.add-exercise input {
+  flex-grow: 1;
+}
+
+.exercise-list {
+  max-height: 400px;
+  overflow-y: auto;
+  padding-right: 10px;
+}
+
+.set-list {
+  max-height: 200px;
+  overflow-y: auto;
+  margin-bottom: 10px;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.exercise, .set {
+  animation: fadeIn 0.3s ease-in;
+}
+
+/* Responsive Design */
+@media (max-width: 600px) {
+  .health-fitness {
+    padding: 10px;
+  }
+
+  .current-workout {
+    padding: 15px;
+  }
+
+  .add-set, .add-exercise {
+    flex-direction: column;
+  }
+
+  .add-set input, .add-exercise input, .add-set button, .add-exercise button {
+    width: 100%;
+  }
+
+  .exercise-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .exercise-header h3 {
+    margin-bottom: 10px;
+  }
+
+  .set {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .set span {
+    margin-bottom: 5px;
+  }
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .exercise, .set {
+    animation: none;
+  }
+}
+
+/* High Contrast Mode */
+@media (prefers-contrast: high) {
+  body {
+    background-color: black;
+    color: white;
+  }
+
+  .current-workout, .workout-entry {
+    background-color: #333;
+    border-color: white;
+  }
+
+  input[type="text"], input[type="number"] {
+    background-color: black;
+    color: white;
+    border-color: white;
+  }
+
+  button {
+    border: 2px solid white;
+  }
+}
+
+/* Custom Scrollbar */
+.exercise-list::-webkit-scrollbar, .set-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+.exercise-list::-webkit-scrollbar-track, .set-list::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+.exercise-list::-webkit-scrollbar-thumb, .set-list::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+.exercise-list::-webkit-scrollbar-thumb:hover, .set-list::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* ... (existing styles) ... */
+
+.edit-workout {
+  background-color: #f0f0f0;
+  padding: 15px;
+  border-radius: 5px;
+  margin-bottom: 10px;
+}
+
+.edit-workout input {
+  width: 100%;
+  padding: 8px;
+  margin-bottom: 10px;
+}
+
+.workout-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.workout-header button {
+  margin-left: 10px;
+}
+
+.import-export {
+  margin-top: 20px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.import-export button,
+.import-export label {
+  padding: 10px 20px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.import-export label {
+  background-color: #2196F3;
+}
+
+/* Add these rules to your existing HealthFitness.css file */
+
+.exercise-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.set {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.delete-button {
+  background-color: #e74c3c;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.delete-button:hover {
+  background-color: #c0392b;
+}
+
+@media (max-width: 600px) {
+  .exercise-header, .set {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .exercise-header button, .set button {
+    margin-top: 5px;
+  }
+}
