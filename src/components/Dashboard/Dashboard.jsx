@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import HabitTracker from '../HabitTracker/HabitTracker';
 import HealthFitness from '../HealthFitness/HealthFitness';
-import { exportData, importData, restoreLastVersion } from '../../utils/db.js';
+import { exportData, importData, restoreLastVersion } from '../../utils/firebaseDb.js';
 import './Dashboard.css';
 
 function Dashboard() {
@@ -9,26 +9,30 @@ function Dashboard() {
   const [exportSection, setExportSection] = useState('all');
   const [importSection, setImportSection] = useState('all');
 
-  const handleExport = () => {
-    const dataToExport = exportData(exportSection);
-    const blob = new Blob([dataToExport], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `dashboard-export-${exportSection}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+  const handleExport = async () => {
+    try {
+      const dataToExport = await exportData(exportSection);
+      const blob = new Blob([JSON.stringify(dataToExport)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `dashboard-export-${exportSection}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      alert('Error exporting data: ' + error.message);
+    }
   };
 
   const handleImport = (event) => {
     const file = event.target.files[0];
     if (file) {
       const reader = new FileReader();
-      reader.onload = (e) => {
+      reader.onload = async (e) => {
         try {
-          importData(e.target.result, importSection);
+          await importData(JSON.parse(e.target.result), importSection);
           alert('Data imported successfully. Refresh the page to see changes.');
         } catch (error) {
           alert('Error importing data: ' + error.message);
@@ -38,24 +42,29 @@ function Dashboard() {
     }
   };
 
-  const handleUndoImport = () => {
-    if (restoreLastVersion()) {
-      alert('Reverted to the last version before import. Refresh the page to see changes.');
-    } else {
-      alert('No previous version available.');
+  const handleUndoImport = async () => {
+    try {
+      const success = await restoreLastVersion();
+      if (success) {
+        alert('Reverted to the last version before import. Refresh the page to see changes.');
+      } else {
+        alert('No previous version available.');
+      }
+    } catch (error) {
+      alert('Error reverting to last version: ' + error.message);
     }
   };
 
   return (
     <div className="dashboard">
       <nav className="dashboard-nav">
-        <button 
+        <button
           className={`tab-button ${activeTab === 'habits' ? 'active' : ''}`}
           onClick={() => setActiveTab('habits')}
         >
           Habit Tracker
         </button>
-        <button 
+        <button
           className={`tab-button ${activeTab === 'fitness' ? 'active' : ''}`}
           onClick={() => setActiveTab('fitness')}
         >
