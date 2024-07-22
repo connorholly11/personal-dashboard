@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './HealthFitness.css';
-import { getWorkouts, setWorkouts, exportData, importData } from '../../utils/db.js';
+import { getWorkouts, setWorkouts, subscribeToWorkouts, exportData, importData } from '../../utils/firebaseDb.js';
 
 function HealthFitness() {
   const [workouts, setWorkoutsState] = useState([]);
@@ -13,25 +13,30 @@ function HealthFitness() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    fetchWorkouts();
+    const unsubscribe = subscribeToWorkouts((updatedWorkouts) => {
+      setWorkoutsState(updatedWorkouts);
+    });
+    return () => unsubscribe();
   }, []);
 
   useEffect(() => {
-    saveWorkouts();
+    if (workouts.length > 0) {
+      saveWorkouts();
+    }
   }, [workouts]);
 
-  const fetchWorkouts = () => {
+  const fetchWorkouts = async () => {
     try {
-      const savedWorkouts = getWorkouts();
+      const savedWorkouts = await getWorkouts();
       setWorkoutsState(savedWorkouts);
     } catch (error) {
       setError('Error fetching workouts: ' + error.message);
     }
   };
 
-  const saveWorkouts = () => {
+  const saveWorkouts = async () => {
     try {
-      setWorkouts(workouts);
+      await setWorkouts(workouts);
     } catch (error) {
       setError('Error saving workouts: ' + error.message);
     }
@@ -79,10 +84,16 @@ function HealthFitness() {
     setWeight('');
   };
 
-  const finishWorkout = () => {
-    setWorkoutsState(prev => [...prev, currentWorkout]);
-    setCurrentWorkout(null);
-    setWorkoutName('');
+  const finishWorkout = async () => {
+    try {
+      const updatedWorkouts = [...workouts, currentWorkout];
+      await setWorkouts(updatedWorkouts);
+      setWorkoutsState(updatedWorkouts);
+      setCurrentWorkout(null);
+      setWorkoutName('');
+    } catch (error) {
+      setError('Error finishing workout: ' + error.message);
+    }
   };
 
   const startEditingWorkout = (workout) => {
@@ -118,35 +129,51 @@ function HealthFitness() {
     }));
   };
 
-  const saveEditingWorkout = () => {
-    setWorkoutsState(prev => prev.map(w => w.id === editingWorkout.id ? editingWorkout : w));
-    setEditingWorkout(null);
+  const saveEditingWorkout = async () => {
+    try {
+      const updatedWorkouts = workouts.map(w => w.id === editingWorkout.id ? editingWorkout : w);
+      await setWorkouts(updatedWorkouts);
+      setEditingWorkout(null);
+    } catch (error) {
+      setError('Error saving edited workout: ' + error.message);
+    }
   };
 
-  const deleteWorkout = (workoutId) => {
-    setWorkoutsState(prev => prev.filter(w => w.id !== workoutId));
+  const deleteWorkout = async (workoutId) => {
+    try {
+      const updatedWorkouts = workouts.filter(w => w.id !== workoutId);
+      await setWorkouts(updatedWorkouts);
+      setWorkoutsState(updatedWorkouts);
+    } catch (error) {
+      setError('Error deleting workout: ' + error.message);
+    }
   };
 
-  const handleExport = () => {
-    const dataToExport = exportData('fitness');
-    const blob = new Blob([dataToExport], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'fitness-tracker-export.json';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+  const handleExport = async () => {
+    try {
+      const dataToExport = await exportData('fitness');
+      const blob = new Blob([JSON.stringify(dataToExport)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'fitness-tracker-export.json';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      setError('Error exporting data: ' + error.message);
+    }
   };
 
   const handleImport = (event) => {
     const file = event.target.files[0];
     if (file) {
       const reader = new FileReader();
-      reader.onload = (e) => {
+      reader.onload = async (e) => {
         try {
-          importData(e.target.result, 'fitness');
+          const importedData = JSON.parse(e.target.result);
+          await importData(importedData, 'fitness');
           fetchWorkouts(); // Refresh the data after import
         } catch (error) {
           setError('Error importing data: ' + error.message);

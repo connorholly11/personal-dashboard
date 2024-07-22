@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './HabitTracker.css';
-import { getHabits, setHabits, getNotes, setNotes, exportData, importData } from '../../utils/db.js';
+import { getHabits, setHabits, getNotes, setNotes, exportData, importData, subscribeToHabits } from '../../utils/firebaseDb.js';
 
 function HabitTracker() {
   const [habits, setHabitsState] = useState([]);
@@ -18,23 +18,31 @@ function HabitTracker() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    fetchData();
+    const unsubscribe = subscribeToHabits((habitsData) => {
+      setHabitsState(habitsData.filter(habit => !habit.archived));
+      setArchivedHabitsState(habitsData.filter(habit => habit.archived));
+    });
+
     const timer = setInterval(() => {
       setCurrentTime(new Date());
     }, 1000);
-    return () => clearInterval(timer);
+
+    return () => {
+      clearInterval(timer);
+      unsubscribe();
+    };
   }, []);
 
   useEffect(() => {
     saveData();
   }, [habits, archivedHabits, notes]);
 
-  const fetchData = () => {
+  const fetchData = async () => {
     try {
-      const habitsData = getHabits();
+      const habitsData = await getHabits();
       setHabitsState(habitsData.filter(habit => !habit.archived));
       setArchivedHabitsState(habitsData.filter(habit => habit.archived));
-      const notesData = getNotes();
+      const notesData = await getNotes();
       setNotesState(notesData);
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -42,10 +50,10 @@ function HabitTracker() {
     }
   };
 
-  const saveData = () => {
+  const saveData = async () => {
     try {
-      setHabits([...habits, ...archivedHabits]);
-      setNotes(notes);
+      await setHabits([...habits, ...archivedHabits]);
+      await setNotes(notes);
     } catch (error) {
       console.error('Error saving data:', error);
       setError(error.message);
@@ -153,30 +161,34 @@ function HabitTracker() {
 
   const isCheckedIn = (date) => {
     if (!selectedHabit) return false;
-    return selectedHabit.checkIns.some(checkIn => 
+    return selectedHabit.checkIns.some(checkIn =>
       new Date(checkIn).setHours(0, 0, 0, 0) === date.setHours(0, 0, 0, 0)
     );
   };
-  const handleExport = () => {
-    const dataToExport = exportData('habits'); // Export only habits data
-    const blob = new Blob([dataToExport], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'habit-tracker-export.json';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+  const handleExport = async () => {
+    try {
+      const dataToExport = await exportData('habits'); // Export only habits data
+      const blob = new Blob([JSON.stringify(dataToExport)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'habit-tracker-export.json';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      setError('Error exporting data: ' + error.message);
+    }
   };
 
   const handleImport = (event) => {
     const file = event.target.files[0];
     if (file) {
       const reader = new FileReader();
-      reader.onload = (e) => {
+      reader.onload = async (e) => {
         try {
-          importData(e.target.result, 'habits'); // Import only habits data
+          await importData(JSON.parse(e.target.result), 'habits'); // Import only habits data
           fetchData(); // Refresh the data after import
         } catch (error) {
           setError('Error importing data: ' + error.message);
