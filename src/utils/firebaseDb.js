@@ -1,6 +1,6 @@
 // src/utils/firebaseDb.js
 import { ref, set, get } from 'firebase/database';
-import { db } from './firebaseConfig';
+import { db } from './firebaseConfig.js'; // Added .js extension
 
 export const setData = async (key, value) => {
   try {
