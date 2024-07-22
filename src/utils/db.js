@@ -1,44 +1,44 @@
-// Helper functions
-const getItem = (key) => {
-  try {
-    return JSON.parse(localStorage.getItem(key)) || null;
-  } catch (error) {
-    console.error(`Error fetching ${key}:`, error);
-    return null;
-  }
-};
+// src/utils/db.js
+import { setData, getData } from '../firebaseDb';
 
-const setItem = (key, value) => {
-  try {
-    localStorage.setItem(key, JSON.stringify(value));
-    console.log(`${key} saved:`, value);
-  } catch (error) {
-    console.error(`Error saving ${key}:`, error);
-    throw error;
-  }
-};
 
 // Habit Tracker functions
-export function getHabits() {
-  const habits = getItem('habits') || [];
-  console.log('Habits fetched:', habits);
-  return habits;
+export async function getHabits() {
+  try {
+    const habits = await getData('habits') || [];
+    console.log('Habits fetched:', habits);
+    return habits;
+  } catch (error) {
+    console.error('Error fetching habits:', error);
+    return [];
+  }
 }
 
-export function setHabits(habits) {
-  setItem('habits', habits);
+export async function setHabits(habits) {
+  try {
+    await setData('habits', habits);
+    console.log('Habits saved:', habits);
+  } catch (error) {
+    console.error('Error saving habits:', error);
+    throw error;
+  }
 }
 
 // Notes functions
-export function getNotes() {
-  const notes = localStorage.getItem('notes') || "";
-  console.log('Notes fetched:', notes);
-  return notes;
+export async function getNotes() {
+  try {
+    const notes = await getData('notes') || "";
+    console.log('Notes fetched:', notes);
+    return notes;
+  } catch (error) {
+    console.error('Error fetching notes:', error);
+    return "";
+  }
 }
 
-export function setNotes(notes) {
+export async function setNotes(notes) {
   try {
-    localStorage.setItem('notes', notes);
+    await setData('notes', notes);
     console.log('Notes saved:', notes);
   } catch (error) {
     console.error('Error saving notes:', error);
@@ -46,66 +46,97 @@ export function setNotes(notes) {
   }
 }
 
+
+
 // Health Fitness functions
-export function getWorkouts() {
-  const workouts = getItem('workouts') || [];
-  console.log('Workouts fetched:', workouts);
-  return workouts;
+export async function getWorkouts() {
+  try {
+    const workouts = await getData('workouts') || [];
+    console.log('Workouts fetched:', workouts);
+    return workouts;
+  } catch (error) {
+    console.error('Error fetching workouts:', error);
+    return [];
+  }
 }
 
-export function setWorkouts(workouts) {
-  setItem('workouts', workouts);
+export async function setWorkouts(workouts) {
+  try {
+    await setData('workouts', workouts);
+    console.log('Workouts saved:', workouts);
+  } catch (error) {
+    console.error('Error saving workouts:', error);
+    throw error;
+  }
 }
 
 // Version control
-export function saveLastVersion() {
-  const lastVersion = {
-    habits: getHabits(),
-    notes: getNotes(),
-    workouts: getWorkouts(),
-  };
-  setItem('lastVersion', lastVersion);
+export async function saveLastVersion() {
+  try {
+    const lastVersion = {
+      habits: await getHabits(),
+      notes: await getNotes(),
+      workouts: await getWorkouts(),
+    };
+    await setData('lastVersion', lastVersion);
+    console.log('Last version saved:', lastVersion);
+  } catch (error) {
+    console.error('Error saving last version:', error);
+    throw error;
+  }
 }
 
-export function restoreLastVersion() {
-  const lastVersion = getItem('lastVersion');
-  if (lastVersion) {
-    setHabits(lastVersion.habits);
-    setNotes(lastVersion.notes);
-    setWorkouts(lastVersion.workouts);
-    return true;
+export async function restoreLastVersion() {
+  try {
+    const lastVersion = await getData('lastVersion');
+    if (lastVersion) {
+      await setHabits(lastVersion.habits);
+      await setNotes(lastVersion.notes);
+      await setWorkouts(lastVersion.workouts);
+      console.log('Last version restored');
+      return true;
+    }
+    console.log('No last version available');
+    return false;
+  } catch (error) {
+    console.error('Error restoring last version:', error);
+    return false;
   }
-  return false;
 }
 
 // Export functions
-export function exportData(section = 'all') {
-  const data = {};
-  if (section === 'all' || section === 'habits') {
-    data.habits = getHabits();
+export async function exportData(section = 'all') {
+  try {
+    const data = {};
+    if (section === 'all' || section === 'habits') {
+      data.habits = await getHabits();
+    }
+    if (section === 'all' || section === 'notes') {
+      data.notes = await getNotes();
+    }
+    if (section === 'all' || section === 'fitness') {
+      data.workouts = await getWorkouts();
+    }
+    return JSON.stringify(data);
+  } catch (error) {
+    console.error('Error exporting data:', error);
+    throw error;
   }
-  if (section === 'all' || section === 'notes') {
-    data.notes = getNotes();
-  }
-  if (section === 'all' || section === 'fitness') {
-    data.workouts = getWorkouts();
-  }
-  return JSON.stringify(data);
 }
 
 // Import functions
-export function importData(jsonData, section = 'all') {
-  saveLastVersion(); // Save current state before import
+export async function importData(jsonData, section = 'all') {
   try {
+    await saveLastVersion(); // Save current state before import
     const data = JSON.parse(jsonData);
     if (section === 'all' || section === 'habits') {
-      if (data.habits) setHabits(data.habits);
+      if (data.habits) await setHabits(data.habits);
     }
     if (section === 'all' || section === 'notes') {
-      if (data.notes) setNotes(data.notes);
+      if (data.notes) await setNotes(data.notes);
     }
     if (section === 'all' || section === 'fitness') {
-      if (data.workouts) setWorkouts(data.workouts);
+      if (data.workouts) await setWorkouts(data.workouts);
     }
     console.log('Data imported successfully');
   } catch (error) {
