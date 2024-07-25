@@ -1,11 +1,9 @@
 // src/utils/db.js
-import { setData, getData } from '../firebaseDb';
-
 
 // Habit Tracker functions
 export async function getHabits() {
   try {
-    const habits = await getData('habits') || [];
+    const habits = JSON.parse(localStorage.getItem('habits')) || [];
     console.log('Habits fetched:', habits);
     return habits;
   } catch (error) {
@@ -16,7 +14,7 @@ export async function getHabits() {
 
 export async function setHabits(habits) {
   try {
-    await setData('habits', habits);
+    localStorage.setItem('habits', JSON.stringify(habits));
     console.log('Habits saved:', habits);
   } catch (error) {
     console.error('Error saving habits:', error);
@@ -27,7 +25,7 @@ export async function setHabits(habits) {
 // Notes functions
 export async function getNotes() {
   try {
-    const notes = await getData('notes') || "";
+    const notes = localStorage.getItem('notes') || "";
     console.log('Notes fetched:', notes);
     return notes;
   } catch (error) {
@@ -38,7 +36,7 @@ export async function getNotes() {
 
 export async function setNotes(notes) {
   try {
-    await setData('notes', notes);
+    localStorage.setItem('notes', notes);
     console.log('Notes saved:', notes);
   } catch (error) {
     console.error('Error saving notes:', error);
@@ -46,12 +44,10 @@ export async function setNotes(notes) {
   }
 }
 
-
-
 // Health Fitness functions
 export async function getWorkouts() {
   try {
-    const workouts = await getData('workouts') || [];
+    const workouts = JSON.parse(localStorage.getItem('workouts')) || [];
     console.log('Workouts fetched:', workouts);
     return workouts;
   } catch (error) {
@@ -62,7 +58,7 @@ export async function getWorkouts() {
 
 export async function setWorkouts(workouts) {
   try {
-    await setData('workouts', workouts);
+    localStorage.setItem('workouts', JSON.stringify(workouts));
     console.log('Workouts saved:', workouts);
   } catch (error) {
     console.error('Error saving workouts:', error);
@@ -78,7 +74,7 @@ export async function saveLastVersion() {
       notes: await getNotes(),
       workouts: await getWorkouts(),
     };
-    await setData('lastVersion', lastVersion);
+    localStorage.setItem('lastVersion', JSON.stringify(lastVersion));
     console.log('Last version saved:', lastVersion);
   } catch (error) {
     console.error('Error saving last version:', error);
@@ -88,7 +84,7 @@ export async function saveLastVersion() {
 
 export async function restoreLastVersion() {
   try {
-    const lastVersion = await getData('lastVersion');
+    const lastVersion = JSON.parse(localStorage.getItem('lastVersion'));
     if (lastVersion) {
       await setHabits(lastVersion.habits);
       await setNotes(lastVersion.notes);

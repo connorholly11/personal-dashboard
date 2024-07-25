@@ -7,8 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "node src/tests/testfirebasedb.js",
-    "test:firebase": "node src/tests/testfirebasedb.js",
+    "test": "node src/tests/testLocalStorage.js",
+    "test:localstorage": "node src/tests/testLocalStorage.js",
     "start": "vite"
   },
   "keywords": [],
@@ -22,8 +22,5 @@
     "react-dom": "^18.2.0",
     "typescript": "^5.2.2",
     "vite": "^5.0.0"
-  },
-  "dependencies": {
-    "firebase": "^10.12.4"
   }
 }
