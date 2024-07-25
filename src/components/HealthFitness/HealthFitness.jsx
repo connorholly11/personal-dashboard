@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './HealthFitness.css';
-import { getWorkouts, setWorkouts, subscribeToWorkouts, exportData, importData } from '../../utils/firebaseDb.js';
+import { saveToLocalStorage, getFromLocalStorage } from '../../utils/localStorageUtils.js';
 
 function HealthFitness() {
   const [workouts, setWorkoutsState] = useState([]);
@@ -13,11 +13,10 @@ function HealthFitness() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const unsubscribe = subscribeToWorkouts((updatedWorkouts) => {
-      setWorkoutsState(updatedWorkouts);
-    });
-    return () => unsubscribe();
+    fetchWorkouts();
   }, []);
+
+
 
   useEffect(() => {
     if (workouts.length > 0) {
@@ -25,22 +24,23 @@ function HealthFitness() {
     }
   }, [workouts]);
 
-  const fetchWorkouts = async () => {
-    try {
-      const savedWorkouts = await getWorkouts();
-      setWorkoutsState(savedWorkouts);
-    } catch (error) {
-      setError('Error fetching workouts: ' + error.message);
-    }
-  };
+const fetchWorkouts = () => {
+  try {
+    const savedWorkouts = getFromLocalStorage('workouts') || [];
+    setWorkoutsState(savedWorkouts);
+  } catch (error) {
+    setError('Error fetching workouts: ' + error.message);
+  }
+};
 
-  const saveWorkouts = async () => {
-    try {
-      await setWorkouts(workouts);
-    } catch (error) {
-      setError('Error saving workouts: ' + error.message);
-    }
-  };
+const saveWorkouts = (workoutsToSave) => {
+  try {
+    saveToLocalStorage('workouts', workoutsToSave);
+    setWorkoutsState(workoutsToSave);
+  } catch (error) {
+    setError('Error saving workouts: ' + error.message);
+  }
+};
 
   const startWorkout = () => {
     const defaultName = `Workout ${new Date().toLocaleString()}`;
@@ -84,17 +84,12 @@ function HealthFitness() {
     setWeight('');
   };
 
-  const finishWorkout = async () => {
-    try {
-      const updatedWorkouts = [...workouts, currentWorkout];
-      await setWorkouts(updatedWorkouts);
-      setWorkoutsState(updatedWorkouts);
-      setCurrentWorkout(null);
-      setWorkoutName('');
-    } catch (error) {
-      setError('Error finishing workout: ' + error.message);
-    }
-  };
+const finishWorkout = () => {
+  const updatedWorkouts = [...workouts, currentWorkout];
+  saveWorkouts(updatedWorkouts);
+  setCurrentWorkout(null);
+  setWorkoutName('');
+};
 
   const startEditingWorkout = (workout) => {
     setEditingWorkout({ ...workout });
@@ -129,59 +124,50 @@ function HealthFitness() {
     }));
   };
 
-  const saveEditingWorkout = async () => {
-    try {
-      const updatedWorkouts = workouts.map(w => w.id === editingWorkout.id ? editingWorkout : w);
-      await setWorkouts(updatedWorkouts);
-      setEditingWorkout(null);
-    } catch (error) {
-      setError('Error saving edited workout: ' + error.message);
-    }
+  const saveEditingWorkout = () => {
+    const updatedWorkouts = workouts.map(w => w.id === editingWorkout.id ? editingWorkout : w);
+    saveWorkouts(updatedWorkouts);
+    setEditingWorkout(null);
   };
 
-  const deleteWorkout = async (workoutId) => {
-    try {
-      const updatedWorkouts = workouts.filter(w => w.id !== workoutId);
-      await setWorkouts(updatedWorkouts);
-      setWorkoutsState(updatedWorkouts);
-    } catch (error) {
-      setError('Error deleting workout: ' + error.message);
-    }
-  };
+const deleteWorkout = (workoutId) => {
+  const updatedWorkouts = workouts.filter(w => w.id !== workoutId);
+  saveWorkouts(updatedWorkouts);
+};
 
-  const handleExport = async () => {
-    try {
-      const dataToExport = await exportData('fitness');
-      const blob = new Blob([JSON.stringify(dataToExport)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'fitness-tracker-export.json';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    } catch (error) {
-      setError('Error exporting data: ' + error.message);
-    }
-  };
+const handleExport = () => {
+  try {
+    const dataToExport = getFromLocalStorage('workouts') || [];
+    const blob = new Blob([JSON.stringify(dataToExport)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'fitness-tracker-export.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  } catch (error) {
+    setError('Error exporting data: ' + error.message);
+  }
+};
 
-  const handleImport = (event) => {
-    const file = event.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = async (e) => {
-        try {
-          const importedData = JSON.parse(e.target.result);
-          await importData(importedData, 'fitness');
-          fetchWorkouts(); // Refresh the data after import
-        } catch (error) {
-          setError('Error importing data: ' + error.message);
-        }
-      };
-      reader.readAsText(file);
-    }
-  };
+const handleImport = (event) => {
+  const file = event.target.files[0];
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const importedData = JSON.parse(e.target.result);
+        saveToLocalStorage('workouts', importedData);
+        fetchWorkouts(); // Refresh the data after import
+      } catch (error) {
+        setError('Error importing data: ' + error.message);
+      }
+    };
+    reader.readAsText(file);
+  }
+};
 
   if (error) {
     return <div>Error: {error}</div>;

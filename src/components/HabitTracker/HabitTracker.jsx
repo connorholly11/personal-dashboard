@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './HabitTracker.css';
-import { getHabits, setHabits, getNotes, setNotes, exportData, importData, subscribeToHabits } from '../../utils/firebaseDb.js';
+import { getFromLocalStorage, saveToLocalStorage, exportLocalData, importLocalData } from '../../utils/localStorageUtils';
 
 function HabitTracker() {
   const [habits, setHabitsState] = useState([]);
@@ -18,10 +18,12 @@ function HabitTracker() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const unsubscribe = subscribeToHabits((habitsData) => {
+    const fetchData = () => {
+      const habitsData = JSON.parse(localStorage.getItem('habits')) || [];
       setHabitsState(habitsData.filter(habit => !habit.archived));
       setArchivedHabitsState(habitsData.filter(habit => habit.archived));
-    });
+    };
+    fetchData();
 
     const timer = setInterval(() => {
       setCurrentTime(new Date());
@@ -29,7 +31,6 @@ function HabitTracker() {
 
     return () => {
       clearInterval(timer);
-      unsubscribe();
     };
   }, []);
 
@@ -37,12 +38,12 @@ function HabitTracker() {
     saveData();
   }, [habits, archivedHabits, notes]);
 
-  const fetchData = async () => {
+  const fetchData = () => {
     try {
-      const habitsData = await getHabits();
+      const habitsData = JSON.parse(localStorage.getItem('habits')) || [];
       setHabitsState(habitsData.filter(habit => !habit.archived));
       setArchivedHabitsState(habitsData.filter(habit => habit.archived));
-      const notesData = await getNotes();
+      const notesData = localStorage.getItem('notes') || '';
       setNotesState(notesData);
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -50,10 +51,10 @@ function HabitTracker() {
     }
   };
 
-  const saveData = async () => {
+  const saveData = () => {
     try {
-      await setHabits([...habits, ...archivedHabits]);
-      await setNotes(notes);
+      localStorage.setItem('habits', JSON.stringify([...habits, ...archivedHabits]));
+      localStorage.setItem('notes', notes);
     } catch (error) {
       console.error('Error saving data:', error);
       setError(error.message);
@@ -165,9 +166,10 @@ function HabitTracker() {
       new Date(checkIn).setHours(0, 0, 0, 0) === date.setHours(0, 0, 0, 0)
     );
   };
-  const handleExport = async () => {
+  const handleExport = () => {
     try {
-      const dataToExport = await exportData('habits'); // Export only habits data
+      const habits = JSON.parse(localStorage.getItem('habits')) || [];
+      const dataToExport = { habits };
       const blob = new Blob([JSON.stringify(dataToExport)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -186,9 +188,10 @@ function HabitTracker() {
     const file = event.target.files[0];
     if (file) {
       const reader = new FileReader();
-      reader.onload = async (e) => {
+      reader.onload = (e) => {
         try {
-          await importData(JSON.parse(e.target.result), 'habits'); // Import only habits data
+          const importedData = JSON.parse(e.target.result);
+          localStorage.setItem('habits', JSON.stringify(importedData.habits));
           fetchData(); // Refresh the data after import
         } catch (error) {
           setError('Error importing data: ' + error.message);

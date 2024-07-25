@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import HabitTracker from '../HabitTracker/HabitTracker';
 import HealthFitness from '../HealthFitness/HealthFitness';
-import { exportData, importData, restoreLastVersion } from '../../utils/firebaseDb.js';
 import './Dashboard.css';
 
 function Dashboard() {
@@ -11,7 +10,16 @@ function Dashboard() {
 
   const handleExport = async () => {
     try {
-      const dataToExport = await exportData(exportSection);
+      let dataToExport;
+      if (exportSection === 'all') {
+        dataToExport = {
+          habits: JSON.parse(localStorage.getItem('habits') || '[]'),
+          workouts: JSON.parse(localStorage.getItem('workouts') || '[]'),
+          notes: localStorage.getItem('notes') || ''
+        };
+      } else {
+        dataToExport = JSON.parse(localStorage.getItem(exportSection) || '[]');
+      }
       const blob = new Blob([JSON.stringify(dataToExport)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -32,7 +40,14 @@ function Dashboard() {
       const reader = new FileReader();
       reader.onload = async (e) => {
         try {
-          await importData(JSON.parse(e.target.result), importSection);
+          const importedData = JSON.parse(e.target.result);
+          if (importSection === 'all') {
+            Object.keys(importedData).forEach(key => {
+              localStorage.setItem(key, JSON.stringify(importedData[key]));
+            });
+          } else {
+            localStorage.setItem(importSection, JSON.stringify(importedData));
+          }
           alert('Data imported successfully. Refresh the page to see changes.');
         } catch (error) {
           alert('Error importing data: ' + error.message);
@@ -44,8 +59,12 @@ function Dashboard() {
 
   const handleUndoImport = async () => {
     try {
-      const success = await restoreLastVersion();
-      if (success) {
+      const lastVersion = localStorage.getItem('lastVersion');
+      if (lastVersion) {
+        const data = JSON.parse(lastVersion);
+        Object.keys(data).forEach(key => {
+          localStorage.setItem(key, JSON.stringify(data[key]));
+        });
         alert('Reverted to the last version before import. Refresh the page to see changes.');
       } else {
         alert('No previous version available.');
@@ -79,7 +98,7 @@ function Dashboard() {
           <select value={exportSection} onChange={(e) => setExportSection(e.target.value)}>
             <option value="all">All Data</option>
             <option value="habits">Habits Only</option>
-            <option value="fitness">Fitness Only</option>
+            <option value="workouts">Fitness Only</option>
           </select>
           <button onClick={handleExport}>Export</button>
         </div>
@@ -87,7 +106,7 @@ function Dashboard() {
           <select value={importSection} onChange={(e) => setImportSection(e.target.value)}>
             <option value="all">All Data</option>
             <option value="habits">Habits Only</option>
-            <option value="fitness">Fitness Only</option>
+            <option value="workouts">Fitness Only</option>
           </select>
           <input
             type="file"
